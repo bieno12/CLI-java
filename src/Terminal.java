@@ -24,6 +24,7 @@ public class Terminal {
         isRunning = true;
     }
 
+    //younes
     public void echo(String[] args) {
 
     }
@@ -44,10 +45,12 @@ public class Terminal {
         currentDiretory = resolvedPath;
     }
 
+    //farah
     public void mkdir(String[] args) throws Exception{
 
     }
 
+    //younes
     public void rmdir(String[] args) throws Exception{
 
     }
@@ -67,14 +70,17 @@ public class Terminal {
         }
     }
 
+    //farah
     public void cp(String[] args) throws Exception{
 
     }
 
+    //younes
     public void rm(String[] args) throws Exception{
 
     }
 
+    //farah
     public void cat(String[] args) throws Exception{
 
     }
