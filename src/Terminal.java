@@ -12,10 +12,10 @@ import java.nio.file.Files;
 
 
 public class Terminal {
-    Parser parser;
-    boolean isRunning;
-    List<String> history;
-    
+    private Parser parser;
+    private boolean isRunning;
+    private List<String> history;
+    private Path currentDiretory;
     Terminal()
     {
         parser = new Parser();
@@ -29,19 +29,18 @@ public class Terminal {
 
     // zeyad
     public String pwd() {
-        return System.getProperty("user.dir");
+        return currentDiretory.toString();
     }
 
     // zeyad
     public void cd(String[] args) throws Exception {
         if (args.length != 1)
             throw new Exception("invalid number of arguments");
-        Path basePath = Paths.get(System.getProperty("user.dir"));
         Path relativePath = Paths.get(args[0]);
-        Path resolvedPath = basePath.resolve(relativePath).normalize();
+        Path resolvedPath = currentDiretory.resolve(relativePath).normalize();
         if (!Files.exists(resolvedPath) || !Files.isDirectory(resolvedPath))
-            throw new Exception("invalid path " + args[0]);
-        System.setProperty("user.dir", resolvedPath.toString());
+            throw new Exception("invalid path :" + args[0]);
+        currentDiretory = resolvedPath;
     }
 
     public void mkdir(String[] args) throws Exception{
@@ -52,6 +51,7 @@ public class Terminal {
 
     }
 
+    //zeyad
     public void touch(String[] args) throws Exception{
         for(String file_path :  args)
         {
@@ -85,7 +85,7 @@ public class Terminal {
 
     // zeyad
     public void exit() {
-
+        isRunning = false;
     }
 
     // This method will choose the suitable command method to be called
@@ -112,29 +112,26 @@ public class Terminal {
                 break;
         }
     }
-
-    public static void main(String[] args) {
-        Terminal term = new Terminal();
+    
+    public void runPrompt() {
         Scanner input = new Scanner(System.in);
-        
-        while (term.isRunning)
-        {
+        while (isRunning) {
             System.out.print(">>");
             String statement = input.nextLine();
             try {
-                term.parser.parse(statement);
-            } catch (Exception e) {
-                System.err.println(e);
-                continue;
-            }
-            try {
-                term.chooseCommandAction();
+                parser.parse(statement);
+                chooseCommandAction();
             } catch (Exception e) {
                 System.err.println(e);
                 continue;
             }
         }
         input.close();
+
+    }
+    public static void main(String[] args) {
+        Terminal term = new Terminal();
+        term.runPrompt();
     }
 }
 class Parser {
