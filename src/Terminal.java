@@ -20,6 +20,7 @@ public class Terminal {
     {
         parser = new Parser();
         history = new LinkedList<>();
+        currentDiretory = Paths.get(System.getProperty("user.dir"));
         isRunning = true;
     }
 
@@ -39,7 +40,7 @@ public class Terminal {
         Path relativePath = Paths.get(args[0]);
         Path resolvedPath = currentDiretory.resolve(relativePath).normalize();
         if (!Files.exists(resolvedPath) || !Files.isDirectory(resolvedPath))
-            throw new Exception("invalid path :" + args[0]);
+            throw new Exception(args[0] + "path is invalid ");
         currentDiretory = resolvedPath;
     }
 
@@ -80,7 +81,9 @@ public class Terminal {
 
     // zeyad
     public void history() {
-
+        for (int i = 0; i < history.size(); i++) {
+            System.out.println((i + 1) + " " + history.get(i));
+        }
     }
 
     // zeyad
@@ -107,6 +110,22 @@ public class Terminal {
             case "rmdir":
                 rmdir(parser.getArgs());
                 break;
+
+            case "cp":
+                cp(parser.getArgs());
+                break;
+            case "rm":
+                rm(parser.getArgs());
+                break;
+            case "cat":
+                cat(parser.getArgs());
+                break;
+            case "history":
+                history();
+                break;
+            case "exit":
+                exit();
+                break;
             default:
                 System.out.println(commandName + ": no such command");
                 break;
@@ -120,9 +139,10 @@ public class Terminal {
             String statement = input.nextLine();
             try {
                 parser.parse(statement);
+                history.add(statement);
                 chooseCommandAction();
             } catch (Exception e) {
-                System.err.println(e);
+                System.err.println(e.getMessage());
                 continue;
             }
         }
