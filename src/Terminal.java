@@ -1,77 +1,142 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Queue;
-
+import java.util.Scanner;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.Files;
+
 
 public class Terminal {
     Parser parser;
+    boolean isRunning;
     List<String> history;
+    
+    Terminal()
+    {
+        parser = new Parser();
+        history = new LinkedList<>();
+        isRunning = true;
+    }
 
     public void echo(String[] args) {
 
     }
 
+    // zeyad
     public String pwd() {
-        return "hello";
+        return System.getProperty("user.dir");
     }
 
-    public void cd(String[] args) {
-
+    // zeyad
+    public void cd(String[] args) throws Exception {
+        if (args.length != 1)
+            throw new Exception("invalid number of arguments");
+        Path basePath = Paths.get(System.getProperty("user.dir"));
+        Path relativePath = Paths.get(args[0]);
+        Path resolvedPath = basePath.resolve(relativePath).normalize();
+        if (!Files.exists(resolvedPath) || !Files.isDirectory(resolvedPath))
+            throw new Exception("invalid path " + args[0]);
+        System.setProperty("user.dir", resolvedPath.toString());
     }
 
-    public void mkdir(String[] args) {
-
-    }
-
-    public void rmdir(String[] args) {
-
-    }
-
-    public void touch(String[] args) {
-
-    }
-
-    public void cp(String[] args) {
+    public void mkdir(String[] args) throws Exception{
 
     }
 
-    public void rm(String[] args) {
+    public void rmdir(String[] args) throws Exception{
 
     }
 
-    public void cat(String[] args) {
+    public void touch(String[] args) throws Exception{
+        for(String file_path :  args)
+        {
+            File newFile = new File(file_path);
+            if (newFile.createNewFile())
+            {
+                System.out.println(newFile.getName() + ": new file created");
+            }
+            else{
+                System.out.println(newFile.getName() + " file already exists");
+            }
+        }
+    }
+
+    public void cp(String[] args) throws Exception{
 
     }
 
+    public void rm(String[] args) throws Exception{
+
+    }
+
+    public void cat(String[] args) throws Exception{
+
+    }
+
+    // zeyad
     public void history() {
 
     }
 
+    // zeyad
     public void exit() {
 
     }
 
     // This method will choose the suitable command method to be called
-    public void chooseCommandAction() {
+    public void chooseCommandAction() throws Exception{
+        String commandName = parser.getCommandName();
+        switch (commandName) {
+            case "echo":
+                touch(parser.getArgs());
+                break;
+            case "pwd":
+                System.out.println(pwd());
+                break;
+            case "cd":
+                cd(parser.getArgs());
+                break;
+            case "mkdir":
+                mkdir(parser.getArgs());
+                break;
+            case "rmdir":
+                rmdir(parser.getArgs());
+                break;
+            default:
+                System.out.println(commandName + ": no such command");
+                break;
+        }
     }
 
     public static void main(String[] args) {
-        Parser parser = new Parser();
-        try {
-            parser.parse("echo hello there ");
-        } catch (Exception e) {
-            e.printStackTrace();
+        Terminal term = new Terminal();
+        Scanner input = new Scanner(System.in);
+        
+        while (term.isRunning)
+        {
+            System.out.print(">>");
+            String statement = input.nextLine();
+            try {
+                term.parser.parse(statement);
+            } catch (Exception e) {
+                System.err.println(e);
+                continue;
+            }
+            try {
+                term.chooseCommandAction();
+            } catch (Exception e) {
+                System.err.println(e);
+                continue;
+            }
         }
-        System.out.println(parser.getCommandName());
-        System.out.println(Arrays.toString(parser.getArgs()));
-        System.out.println(parser.getRedirectFilename());
-        System.out.println(parser.isAppend());
+        input.close();
     }
 }
-
 class Parser {
     String commandName;
     String[] args;
@@ -155,7 +220,10 @@ class Parser {
     }
 
     public String[] getArgs() {
-        return args;
+        if (args == null)
+            return new String[0];
+        
+        return args.clone();
     }
 
     public boolean isAppend() {
