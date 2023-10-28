@@ -56,7 +56,7 @@ public class Terminal {
     public void touch(String[] args) throws Exception{
         for(String file_path :  args)
         {
-            File newFile = new File(file_path);
+            File newFile = currentDiretory.resolve(file_path).toFile();
             if (newFile.createNewFile())
             {
                 System.out.println(newFile.getName() + ": new file created");
@@ -96,6 +96,9 @@ public class Terminal {
         String commandName = parser.getCommandName();
         switch (commandName) {
             case "echo":
+                echo(parser.getArgs());
+                break;
+            case "touch":
                 touch(parser.getArgs());
                 break;
             case "pwd":
