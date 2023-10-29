@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
@@ -26,7 +28,7 @@ public class Terminal {
 
     //younes
     public void echo(String[] args) {
-
+        System.out.println(String.join(" ", args));
     }
 
     // zeyad
@@ -147,9 +149,30 @@ public class Terminal {
             System.out.print(">>");
             String statement = input.nextLine();
             try {
+                //parse statement
                 parser.parse(statement);
+                //redirect output
+                PrintStream originalStream = null; 
+                PrintStream redirectedStream = null; 
+                FileOutputStream outputFile = null;
+                if (parser.getRedirectFilename() != null)
+                {
+                    originalStream = System.out;
+                    outputFile = new FileOutputStream(parser.getRedirectFilename(),
+                        parser.isAppend());
+                    redirectedStream = new PrintStream(outputFile);
+
+                    System.setOut(redirectedStream);
+                }
                 history.add(statement);
                 chooseCommandAction();
+
+                if (originalStream != null)
+                    System.setOut(originalStream);
+                if (redirectedStream != null)
+                    redirectedStream.close();
+                if (outputFile != null)
+                    outputFile.close();
             } catch (Exception e) {
                 System.err.println(e.getMessage());
                 continue;
