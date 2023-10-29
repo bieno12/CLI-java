@@ -6,10 +6,13 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.ParseException;
 import java.nio.file.Files;
 
 
@@ -174,7 +177,7 @@ public class Terminal {
                 if (outputFile != null)
                     outputFile.close();
             } catch (Exception e) {
-                System.err.println(e.getMessage());
+                System.err.println(e);
                 continue;
             }
         }
@@ -192,6 +195,10 @@ class Parser {
     String redirectFilename;
     private boolean appendMode;
 
+    private static final Pattern WORD_PATTERN = Pattern.compile("((?:[^<>\\\"\\|\\s]+(?:\\\"[^\\\"]*\\\")*)+|(?:(?:\\\"[^\\\"]*\\\")+(?:[[^<>\\\"\\|]]*))+)");
+    private static final Pattern OPERATOR_PATTERN = Pattern.compile("(>>|>)");
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
+
     BufferedReader stream;
 
     // This method will divide the input into commandName and args
@@ -204,20 +211,20 @@ class Parser {
     }
 
     public boolean parse(String input) throws IOException, Exception {
-        class ParseException extends Exception {
-            ParseException(String message) {
-                super(message);
-            }
-        }
+        commandName = null;
+        appendMode = false;
+        redirectFilename = null;
+        appendMode = false;
+        args = null;
 
-        Queue<String> words = new LinkedList<>(Arrays.asList(input.split(" ")));
-        if (words.size() == 0) {
-            commandName = null;
-            args = null;
-            throw new ParseException("Empty Command");
-        }
+        if (input.trim() == "")
+            throw new ParseException("Empty Command", 0);
+
+        Queue<String> words = tokenize(input);
 
         commandName = words.poll();
+
+
         List<String> argsList = new LinkedList<>();
         while (!words.isEmpty()) {
             String w = words.peek();
@@ -227,21 +234,20 @@ class Parser {
         }
         args = argsList.toArray(new String[0]);
 
-        redirectFilename = null;
-        appendMode = false;
+
         if (!words.isEmpty()) {
             String operator = words.poll();
             switch (operator) {
                 case ">": {
                     if (words.isEmpty())
-                        throw new ParseException("> operator must be followed by a filename");
+                        throw new ParseException("> operator must be followed by a filename", 0);
                     redirectFilename = words.poll();
                     appendMode = false;
                 }
                     break;
                 case ">>": {
                     if (words.isEmpty())
-                        throw new ParseException(">> operator must be followed by a filename");
+                        throw new ParseException(">> operator must be followed by a filename", 0);
                     redirectFilename = words.poll();
                     appendMode = true;
                 }
@@ -253,15 +259,48 @@ class Parser {
         return true;
     }
 
-    private boolean isInvalidFilenamePart(int codePoint) {
-        return codePoint != '\\'
-                && codePoint != '/'
-                && codePoint != ':'
-                && codePoint != '*'
-                && codePoint != '?'
-                && codePoint != '<'
-                && codePoint != '>'
-                && codePoint != '|';
+    private LinkedList<String> tokenize(String input) throws ParseException
+    {
+        LinkedList<String> tokens = new LinkedList<>();
+        Matcher matcher;
+
+        while(!input.isEmpty())
+        {
+            matcher = WORD_PATTERN.matcher(input);
+            if (matcher.lookingAt()) {
+                String word = normalize(matcher.group(1));
+                tokens.add(word); // Capture the word
+                input = input.substring(matcher.end());
+                continue;
+            }
+            matcher = OPERATOR_PATTERN.matcher(input);
+            if (matcher.lookingAt()) {
+                tokens.add(matcher.group(1)); // Capture the operator
+                input = input.substring(matcher.end());
+                continue;
+            }
+            matcher = WHITESPACE_PATTERN.matcher(input);
+            if (matcher.lookingAt()) {
+                input = input.substring(matcher.end());
+                continue;
+            }
+            throw new ParseException("unexpected character " + input.charAt(0), 0);
+        }
+        return tokens;
+
+    }
+    private String normalize(String group) {
+        StringBuilder builder = new StringBuilder(group.length());
+        for(int i = 0; i < group.length(); i++)
+        {
+            if(group.charAt(i) == '"')
+                continue;
+            if(group.charAt(i) == '\\' && group.length() > i + 1 && group.charAt(i + 1) == '"')
+                builder.append('"');
+            else
+                builder.append(group.charAt(i));
+        }
+        return builder.toString();
     }
 
     public String getCommandName() {
