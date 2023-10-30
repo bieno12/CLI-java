@@ -14,7 +14,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.nio.file.Files;
-
+import java.io.FileWriter;
+import java.io.FileReader;
 
 public class Terminal {
     private Parser parser;
@@ -52,7 +53,23 @@ public class Terminal {
 
     //farah
     public void mkdir(String[] args) throws Exception{
-
+        if (args.length < 1){
+            System.out.println("Error: command not found or invalid parameters are entered!");
+        }else {
+            for (String arg : args) {
+                File newDir = new File(arg);
+                if (newDir.isAbsolute()) {
+                    File parentDir = newDir.getParentFile();
+                    if (parentDir != null && parentDir.isDirectory()) {
+                        String newDirName = newDir.getName();
+                        File nDir = new File(parentDir, newDirName);//putting the new dir in the parent dir
+                        nDir.mkdir();
+                    }
+                }else {
+                    newDir.mkdir();
+                }
+            }
+        }
     }
 
     //younes
@@ -77,7 +94,22 @@ public class Terminal {
 
     //farah
     public void cp(String[] args) throws Exception{
+        if (args.length < 2){
+            System.out.println("Error: command not found or invalid parameters are entered!");
+        }else {
+            String src = args[0];
+            String des = args[1];
+            FileReader srcReader = new FileReader(src);
+            FileWriter desWriter = new FileWriter(des);
+            int character;
+            //Read characters from source File and write them to destination File
+            while ((character = srcReader.read()) != -1) {
+                desWriter.write(character);
+            }
+            srcReader.close();
+            desWriter.close();
 
+        }
     }
 
     //younes
@@ -86,8 +118,44 @@ public class Terminal {
     }
 
     //farah
-    public void cat(String[] args) throws Exception{
-
+    public void cat(String[] args) throws Exception {
+        if (args.length == 1) {
+            String fileName = args[0];
+            File file = new  File(fileName);
+            if (file.exists()) {
+                Scanner myReader = new Scanner(file);
+                while (myReader.hasNextLine()) {
+                    String data = myReader.nextLine();
+                    System.out.println(data);
+                }
+                myReader.close();
+            }else {
+                System.out.println("Error: command not found or invalid parameters are entered!");
+            }
+        }else if (args.length == 2){
+            String fileName1 = args[0];
+            String fileName2 = args[1];
+            File file1 = new  File(fileName1);
+            File file2 = new  File(fileName2);
+            if (file1.exists() && file2.exists()) {
+                Scanner fileReader1 = new Scanner(file1);
+                Scanner fileReader2 = new Scanner(file2);
+                while (fileReader1.hasNextLine()) {
+                    String data = fileReader1.nextLine();
+                    System.out.println(data);
+                }
+                fileReader1.close();
+                while (fileReader2.hasNextLine()) {
+                    String data = fileReader2.nextLine();
+                    System.out.println(data);
+                }
+                fileReader2.close();
+            }else {
+                System.out.println("Error: command not found or invalid parameters are entered!");
+            }
+        } else {
+            System.out.println("Error: command not found or invalid parameters are entered!");
+        }
     }
 
     // zeyad
