@@ -30,46 +30,45 @@ public class Terminal {
     private boolean isRunning;
     private List<String> history;
     private Path currentDiretory;
-    Terminal()
-    {
+
+    Terminal() {
         parser = new Parser();
         history = new LinkedList<>();
         currentDiretory = Paths.get(System.getProperty("user.dir"));
         isRunning = true;
     }
 
-    //younes
-   public void echo(String[] args) {
+    // younes
+    public void echo(String[] args) {
+        // i don't understand
         StringBuilder result = new StringBuilder();
         for (String arg : args) {
             result.append(arg).append(" ");
         }
         System.out.println(result.toString().trim());
     }
-    public void ls(String[] args)
-    {
-        if (args.length > 1)
-        {
+
+    public void ls(String[] args) {
+        if (args.length > 1) {
             System.out.println("usage: ls [-r]");
-            return ;
+            return;
         }
 
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(currentDiretory))
-        {
-            List<Path> entries = new ArrayList();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(currentDiretory)) {
+            List<Path> entries = new ArrayList<Path>();
 
             for (Path entry : stream)
                 entries.add(entry);
             if (args.length > 0 && args[0].equals("-r"))
                 Collections.reverse(entries);
             entries.forEach(entry -> System.out.println(entry.getFileName()));
-        }
-        catch (IOException e)
-        {
-            System.out.println("Error: " + e.getMessage());;
+        } catch (IOException e) {
+            System.out.println("Error: " + e.getMessage());
+            ;
         }
 
     }
+
     // zeyad
     public String pwd() {
         return currentDiretory.toString();
@@ -86,51 +85,49 @@ public class Terminal {
         currentDiretory = resolvedPath;
     }
 
-    //farah
-    public void mkdir(String[] args) throws Exception{
-        if (args.length < 1){
+    // farah
+    public void mkdir(String[] args) throws Exception {
+        if (args.length < 1) {
             System.out.println("Error: command not found or invalid parameters are entered!");
-        }else {
+        } else {
             for (String arg : args) {
                 File newDir = currentDiretory.resolve(arg).toFile();
-                if (newDir.mkdir())
-                {
-                    System.out.println("created dir: '"+ newDir.getAbsolutePath().toString()+"'");
-                }
-                else
-                {
+                if (newDir.mkdir()) {
+                    System.out.println("created dir: '" + newDir.getAbsolutePath().toString() + "'");
+                } else {
                     System.err.println("couldn't create '" + newDir.getAbsolutePath().toString() + "'");
                 }
             }
         }
     }
 
-    //younes
-   public void rmdir(String[] args) {
+    // younes
+    public void rmdir(String[] args) {
         if (args.length != 1) {
             System.out.println("Usage: rmdir [directory]");
             return;
         }
 
-        if (args[0].equals("*"))
-        {
+        if (args[0].equals("*")) {
             try {
-                Files.walkFileTree(currentDiretory, new HashSet<>(Arrays.asList(FileVisitOption.FOLLOW_LINKS)), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                        return FileVisitResult.CONTINUE;
-                    }
+                Files.walkFileTree(currentDiretory, new HashSet<>(Arrays.asList(FileVisitOption.FOLLOW_LINKS)),
+                        Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
+                            @Override
+                            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                                return FileVisitResult.CONTINUE;
+                            }
 
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                        if (Files.isDirectory(dir) && dir.toFile().list().length == 0) {
-                            Files.delete(dir);
-                        }
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
+                            @Override
+                            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                                if (Files.isDirectory(dir) && dir.toFile().list().length == 0) {
+                                    Files.delete(dir);
+                                }
+                                return FileVisitResult.CONTINUE;
+                            }
+                        });
             } catch (IOException e) {
-                System.err.println("Error: " + e.getMessage());;
+                System.err.println("Error: " + e.getMessage());
+                ;
             }
 
             return;
@@ -150,46 +147,69 @@ public class Terminal {
         }
     }
 
-    //zeyad
-    public void touch(String[] args) throws Exception{
-        for(String file_path :  args)
-        {
+    // zeyad
+    public void touch(String[] args) throws Exception {
+        for (String file_path : args) {
             File newFile = currentDiretory.resolve(file_path).toFile();
-            if (newFile.createNewFile())
-            {
+            if (newFile.createNewFile()) {
                 System.out.println(newFile.getName() + ": new file created");
-            }
-            else{
+            } else {
                 System.out.println(newFile.getName() + " file already exists");
             }
         }
     }
 
-    //farah
-    public void cp(String[] args) throws Exception{
-        if (args.length < 2){
-            System.out.println("Error: command not found or invalid parameters are entered!");
-        }else {
+    // farah
+    public void cp(String[] args) throws Exception {
+        if (args.length == 2) {
             Path src = currentDiretory.resolve(args[0]);
             Path des = currentDiretory.resolve(args[1]);
             FileReader srcReader = new FileReader(src.toString());
             FileWriter desWriter = new FileWriter(des.toString());
             int character;
-            //Read characters from source File and write them to destination File
+            // Read characters from source File and write them to destination File
             while ((character = srcReader.read()) != -1) {
                 desWriter.write(character);
             }
             srcReader.close();
             desWriter.close();
-        }
+        } else if (args.length == 3 && args[0].equals("-r")) {
+            Path sourcePath = currentDiretory.resolve(args[1]);
+            Path targetPath = currentDiretory.resolve(args[2]);
+
+            try {
+                Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult preVisitDirectory(final Path dir,
+                            final BasicFileAttributes attrs) throws IOException {
+                        Files.createDirectories(targetPath.resolve(sourcePath
+                                .relativize(dir)));
+                        return FileVisitResult.CONTINUE;
+                    }
+            
+                    @Override
+                    public FileVisitResult visitFile(final Path file,
+                            final BasicFileAttributes attrs) throws IOException {
+                        Files.copy(file,
+                                targetPath.resolve(sourcePath.relativize(file)));
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            
+            } catch (IOException e) {
+                System.out.println(e);;
+                ;
+            }
+
+        } else
+            System.out.println("Error: Invalid arguments");
     }
 
-    //younes
-   public void rm(String[] args) {
-        if (args.length != 1)
-        {
+    // younes
+    public void rm(String[] args) {
+        if (args.length != 1) {
             System.out.println("usage: rm [filename]");
-            return ;
+            return;
         }
         Path filePath = currentDiretory.resolve(args[0]);
 
@@ -205,7 +225,7 @@ public class Terminal {
         }
     }
 
-    //farah
+    // farah
     public void cat(String[] args) throws Exception {
         if (args.length == 1) {
             Path filePath = currentDiretory.resolve(args[0]);
@@ -217,10 +237,10 @@ public class Terminal {
                     System.out.println(data);
                 }
                 myReader.close();
-            }else {
+            } else {
                 System.out.println("Error: command not found or invalid parameters are entered!");
             }
-        }else if (args.length == 2){
+        } else if (args.length == 2) {
             Path fileName1 = currentDiretory.resolve(args[0]);
             Path fileName2 = currentDiretory.resolve(args[1]);
             File file1 = fileName1.toFile();
@@ -238,7 +258,7 @@ public class Terminal {
                     System.out.println(data);
                 }
                 fileReader2.close();
-            }else {
+            } else {
                 System.out.println("Error: command not found or invalid parameters are entered!");
             }
         } else {
@@ -258,7 +278,7 @@ public class Terminal {
     }
 
     // This method will choose the suitable command method to be called
-    public void chooseCommandAction() throws Exception{
+    public void chooseCommandAction() throws Exception {
         String commandName = parser.getCommandName();
         switch (commandName) {
             case "echo":
@@ -303,24 +323,23 @@ public class Terminal {
                 break;
         }
     }
-    
+
     public void runPrompt() {
         Scanner input = new Scanner(System.in);
         while (isRunning) {
             System.out.print(">>");
             String statement = input.nextLine();
             try {
-                //parse statement
+                // parse statement
                 parser.parse(statement);
-                //redirect output
-                PrintStream originalStream = null; 
-                PrintStream redirectedStream = null; 
+                // redirect output
+                PrintStream originalStream = null;
+                PrintStream redirectedStream = null;
                 FileOutputStream outputFile = null;
-                if (parser.getRedirectFilename() != null)
-                {
+                if (parser.getRedirectFilename() != null) {
                     originalStream = System.out;
                     outputFile = new FileOutputStream(parser.getRedirectFilename(),
-                        parser.isAppend());
+                            parser.isAppend());
                     redirectedStream = new PrintStream(outputFile);
 
                     System.setOut(redirectedStream);
@@ -342,18 +361,21 @@ public class Terminal {
         input.close();
 
     }
+
     public static void main(String[] args) {
         Terminal term = new Terminal();
         term.runPrompt();
     }
 }
+
 class Parser {
     String commandName;
     String[] args;
     String redirectFilename;
     private boolean appendMode;
 
-    private static final Pattern WORD_PATTERN = Pattern.compile("((?:[^<>\\\"\\|\\s]+(?:\\\"[^\\\"]*\\\")*)+|(?:(?:\\\"[^\\\"]*\\\")+(?:[[^<>\\\"\\|]]*))+)");
+    private static final Pattern WORD_PATTERN = Pattern
+            .compile("((?:[^<>\\\"\\|\\s]+(?:\\\"[^\\\"]*\\\")*)+|(?:(?:\\\"[^\\\"]*\\\")+(?:[[^<>\\\"\\|]]*))+)");
     private static final Pattern OPERATOR_PATTERN = Pattern.compile("(>>|>)");
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
@@ -382,7 +404,6 @@ class Parser {
 
         commandName = words.poll();
 
-
         List<String> argsList = new LinkedList<>();
         while (!words.isEmpty()) {
             String w = words.peek();
@@ -391,7 +412,6 @@ class Parser {
             argsList.add(words.poll());
         }
         args = argsList.toArray(new String[0]);
-
 
         if (!words.isEmpty()) {
             String operator = words.poll();
@@ -417,13 +437,11 @@ class Parser {
         return true;
     }
 
-    private LinkedList<String> tokenize(String input) throws ParseException
-    {
+    private LinkedList<String> tokenize(String input) throws ParseException {
         LinkedList<String> tokens = new LinkedList<>();
         Matcher matcher;
 
-        while(!input.isEmpty())
-        {
+        while (!input.isEmpty()) {
             matcher = WORD_PATTERN.matcher(input);
             if (matcher.lookingAt()) {
                 String word = normalize(matcher.group(1));
@@ -447,13 +465,13 @@ class Parser {
         return tokens;
 
     }
+
     private String normalize(String group) {
         StringBuilder builder = new StringBuilder(group.length());
-        for(int i = 0; i < group.length(); i++)
-        {
-            if(group.charAt(i) == '"')
+        for (int i = 0; i < group.length(); i++) {
+            if (group.charAt(i) == '"')
                 continue;
-            if(group.charAt(i) == '\\' && group.length() > i + 1 && group.charAt(i + 1) == '"')
+            if (group.charAt(i) == '\\' && group.length() > i + 1 && group.charAt(i + 1) == '"')
                 builder.append('"');
             else
                 builder.append(group.charAt(i));
@@ -468,7 +486,7 @@ class Parser {
     public String[] getArgs() {
         if (args == null)
             return new String[0];
-        
+
         return args.clone();
     }
 
