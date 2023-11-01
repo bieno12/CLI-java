@@ -1,3 +1,5 @@
 .vscode/
+.idea/
+*.txt
 bin/
 .DS_Store
