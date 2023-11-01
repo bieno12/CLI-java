@@ -31,8 +31,12 @@ public class Terminal {
     }
 
     //younes
-    public void echo(String[] args) {
-        System.out.println(String.join(" ", args));
+   public void echo(String[] args) {
+        StringBuilder result = new StringBuilder();
+        for (String arg : args) {
+            result.append(arg).append(" ");
+        }
+        System.out.println(result.toString().trim());
     }
 
     // zeyad
@@ -73,8 +77,44 @@ public class Terminal {
     }
 
     //younes
-    public void rmdir(String[] args) throws Exception{
+   public static void rmdir(String[] args) {
+        if (args.length != 1) {
+            System.out.println("Usage: rmdir [directory]");
+            return;
+        }
 
+        Path directory = Paths.get(args[0]);
+
+        if (Files.exists(directory)) {
+            try {
+                if (args[0].equals("*")) {
+                    Files.walkFileTree(directory, FileVisitOption.FOLLOW_LINKS, Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                            return FileVisitResult.CONTINUE;
+                        }
+
+                        @Override
+                        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                            if (Files.isDirectory(dir) && dir.toFile().list().length == 0) {
+                                Files.delete(dir);
+                            }
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+                } else {
+                    if (Files.isDirectory(directory) && directory.toFile().list().length == 0) {
+                        Files.delete(directory);
+                    } else {
+                        System.out.println("Directory is not empty or does not exist.");
+                    }
+                }
+            } catch (IOException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        } else {
+            System.out.println("Directory does not exist.");
+        }
     }
 
     //zeyad
@@ -113,8 +153,19 @@ public class Terminal {
     }
 
     //younes
-    public void rm(String[] args) throws Exception{
+   public void rm(String fileName) {
+        Path filePath = Paths.get(fileName);
 
+        if (Files.exists(filePath) && Files.isRegularFile(filePath)) {
+            try {
+                Files.delete(filePath);
+                System.out.println("File '" + fileName + "' has been removed.");
+            } catch (IOException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
+        } else {
+            System.out.println("File '" + fileName + "' does not exist in the current directory.");
+        }
     }
 
     //farah
