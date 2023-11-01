@@ -16,6 +16,11 @@ import java.text.ParseException;
 import java.nio.file.Files;
 import java.io.FileWriter;
 import java.io.FileReader;
+import java.nio.file.FileVisitOption;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.FileVisitResult;
+import java.nio.file.attribute.BasicFileAttributes;
+
 
 public class Terminal {
     private Parser parser;
@@ -61,59 +66,56 @@ public class Terminal {
             System.out.println("Error: command not found or invalid parameters are entered!");
         }else {
             for (String arg : args) {
-                File newDir = new File(arg);
-                if (newDir.isAbsolute()) {
-                    File parentDir = newDir.getParentFile();
-                    if (parentDir != null && parentDir.isDirectory()) {
-                        String newDirName = newDir.getName();
-                        File nDir = new File(parentDir, newDirName);//putting the new dir in the parent dir
-                        nDir.mkdir();
-                    }
-                }else {
-                    newDir.mkdir();
+                File newDir = currentDiretory.resolve(arg).toFile();
+                if (newDir.mkdir())
+                {
+                    System.out.println("created dir: '"+ newDir.getAbsolutePath().toString()+"'");
+                }
+                else
+                {
+                    System.err.println("couldn't create '" + newDir.getAbsolutePath().toString() + "'");
                 }
             }
         }
     }
 
     //younes
-   public static void rmdir(String[] args) {
+   public void rmdir(String[] args) {
         if (args.length != 1) {
             System.out.println("Usage: rmdir [directory]");
             return;
         }
 
-        Path directory = Paths.get(args[0]);
+        Path directory = currentDiretory.resolve(args[0]);
+        if (args[0] == "*")
+        {
+            Files.walkFileTree(directory, FileVisitOption.FOLLOW_LINKS, Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    if (Files.isDirectory(dir) && dir.toFile().list().length == 0) {
+                        Files.delete(dir);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
 
         if (Files.exists(directory)) {
             try {
-                if (args[0].equals("*")) {
-                    Files.walkFileTree(directory, FileVisitOption.FOLLOW_LINKS, Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
-                        @Override
-                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                            return FileVisitResult.CONTINUE;
-                        }
-
-                        @Override
-                        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                            if (Files.isDirectory(dir) && dir.toFile().list().length == 0) {
-                                Files.delete(dir);
-                            }
-                            return FileVisitResult.CONTINUE;
-                        }
-                    });
-                } else {
-                    if (Files.isDirectory(directory) && directory.toFile().list().length == 0) {
-                        Files.delete(directory);
-                    } else {
-                        System.out.println("Directory is not empty or does not exist.");
-                    }
-                }
+                if (Files.isDirectory(directory) && directory.toFile().list().length == 0)
+                    Files.delete(directory);
+                else
+                    System.out.println("Directory is not empty or does not exist.");
             } catch (IOException e) {
                 System.out.println("Error: " + e.getMessage());
             }
         } else {
-            System.out.println("Directory does not exist.");
+            System.out.println(args[0] + " Directory does not exist.");
         }
     }
 
@@ -137,10 +139,10 @@ public class Terminal {
         if (args.length < 2){
             System.out.println("Error: command not found or invalid parameters are entered!");
         }else {
-            String src = args[0];
-            String des = args[1];
-            FileReader srcReader = new FileReader(src);
-            FileWriter desWriter = new FileWriter(des);
+            Path src = currentDiretory.resolve(args[0]);
+            Path des = currentDiretory.resolve(args[1]);
+            FileReader srcReader = new FileReader(src.toString());
+            FileWriter desWriter = new FileWriter(des.toString());
             int character;
             //Read characters from source File and write them to destination File
             while ((character = srcReader.read()) != -1) {
@@ -148,31 +150,35 @@ public class Terminal {
             }
             srcReader.close();
             desWriter.close();
-
         }
     }
 
     //younes
-   public void rm(String fileName) {
-        Path filePath = Paths.get(fileName);
+   public void rm(String[] args) {
+        if (args.length != 1)
+        {
+            System.out.println("usage: rm [filename]");
+            return ;
+        }
+        Path filePath = currentDiretory.resolve(args[0]);
 
         if (Files.exists(filePath) && Files.isRegularFile(filePath)) {
             try {
                 Files.delete(filePath);
-                System.out.println("File '" + fileName + "' has been removed.");
+                System.out.println("File '" + args[0] + "' has been removed.");
             } catch (IOException e) {
                 System.out.println("Error: " + e.getMessage());
             }
         } else {
-            System.out.println("File '" + fileName + "' does not exist in the current directory.");
+            System.out.println("File '" + args[0] + "' does not exist.");
         }
     }
 
     //farah
     public void cat(String[] args) throws Exception {
         if (args.length == 1) {
-            String fileName = args[0];
-            File file = new  File(fileName);
+            Path filePath = currentDiretory.resolve(args[0]);
+            File file = filePath.toFile();
             if (file.exists()) {
                 Scanner myReader = new Scanner(file);
                 while (myReader.hasNextLine()) {
@@ -184,10 +190,10 @@ public class Terminal {
                 System.out.println("Error: command not found or invalid parameters are entered!");
             }
         }else if (args.length == 2){
-            String fileName1 = args[0];
-            String fileName2 = args[1];
-            File file1 = new  File(fileName1);
-            File file2 = new  File(fileName2);
+            Path fileName1 = currentDiretory.resolve(args[0]);
+            Path fileName2 = currentDiretory.resolve(args[1]);
+            File file1 = fileName1.toFile();
+            File file2 = fileName2.toFile();
             if (file1.exists() && file2.exists()) {
                 Scanner fileReader1 = new Scanner(file1);
                 Scanner fileReader2 = new Scanner(file2);
@@ -211,9 +217,8 @@ public class Terminal {
 
     // zeyad
     public void history() {
-        for (int i = 0; i < history.size(); i++) {
+        for (int i = 0; i < history.size(); i++)
             System.out.println((i + 1) + " " + history.get(i));
-        }
     }
 
     // zeyad
