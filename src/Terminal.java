@@ -20,7 +20,10 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.FileVisitResult;
 import java.nio.file.attribute.BasicFileAttributes;
-
+import java.util.HashSet;
+import java.nio.file.DirectoryStream;
+import java.util.Collections;
+import java.util.ArrayList;
 
 public class Terminal {
     private Parser parser;
@@ -43,7 +46,30 @@ public class Terminal {
         }
         System.out.println(result.toString().trim());
     }
+    public void ls(String[] args)
+    {
+        if (args.length > 1)
+        {
+            System.out.println("usage: ls [-r]");
+            return ;
+        }
 
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(currentDiretory))
+        {
+            List<Path> entries = new ArrayList();
+
+            for (Path entry : stream)
+                entries.add(entry);
+            if (args.length > 0 && args[0].equals("-r"))
+                Collections.reverse(entries);
+            entries.forEach(entry -> System.out.println(entry.getFileName()));
+        }
+        catch (IOException e)
+        {
+            System.out.println("Error: " + e.getMessage());;
+        }
+
+    }
     // zeyad
     public String pwd() {
         return currentDiretory.toString();
@@ -86,25 +112,30 @@ public class Terminal {
             return;
         }
 
-        Path directory = currentDiretory.resolve(args[0]);
-        if (args[0] == "*")
+        if (args[0].equals("*"))
         {
-            Files.walkFileTree(directory, FileVisitOption.FOLLOW_LINKS, Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                    if (Files.isDirectory(dir) && dir.toFile().list().length == 0) {
-                        Files.delete(dir);
+            try {
+                Files.walkFileTree(currentDiretory, new HashSet<>(Arrays.asList(FileVisitOption.FOLLOW_LINKS)), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                        return FileVisitResult.CONTINUE;
                     }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        }
 
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                        if (Files.isDirectory(dir) && dir.toFile().list().length == 0) {
+                            Files.delete(dir);
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException e) {
+                System.err.println("Error: " + e.getMessage());;
+            }
+
+            return;
+        }
+        Path directory = currentDiretory.resolve(args[0]);
         if (Files.exists(directory)) {
             try {
                 if (Files.isDirectory(directory) && directory.toFile().list().length == 0)
@@ -241,6 +272,9 @@ public class Terminal {
                 break;
             case "cd":
                 cd(parser.getArgs());
+                break;
+            case "ls":
+                ls(parser.getArgs());
                 break;
             case "mkdir":
                 mkdir(parser.getArgs());
