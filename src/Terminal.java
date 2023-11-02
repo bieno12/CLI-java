@@ -284,6 +284,30 @@ public class Terminal {
             System.out.println((i + 1) + " " + history.get(i));
     }
 
+    public void wc(String[] args)
+    {
+        if (args.length != 1)
+        {
+            System.out.println("usage: wc filepath");
+            return ;
+        }
+        int lines = 0, words = 0, characters = 0;
+
+        try {
+            Path filepath = currentDiretory.resolve(args[0]);
+            List<String> filecontent = Files.readAllLines(filepath);
+            lines = filecontent.size();
+            for (String line : filecontent)
+            {
+                words += line.split("\\s").length;
+                characters += line.length();
+            }    
+            System.out.println(String.format("%d, %d, %d, %s", lines, words, characters, filepath.getFileName()));
+        } catch (IOException e) {
+            System.out.println(e);
+            return ;
+        }
+    }
     // zeyad
     public void exit() {
         isRunning = false;
@@ -323,6 +347,9 @@ public class Terminal {
                 break;
             case "cat":
                 cat(parser.getArgs());
+                break;
+            case "wc":
+                wc(parser.getArgs());
                 break;
             case "history":
                 history();
