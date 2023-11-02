@@ -30,11 +30,12 @@ public class Terminal {
     private boolean isRunning;
     private List<String> history;
     private Path currentDiretory;
-
+    private Path homeDirectory;
     Terminal() {
         parser = new Parser();
         history = new LinkedList<>();
         currentDiretory = Paths.get(System.getProperty("user.dir"));
+        homeDirectory = Paths.get(System.getProperty("user.home"));
         isRunning = true;
     }
 
@@ -75,13 +76,24 @@ public class Terminal {
     }
 
     // zeyad
-    public void cd(String[] args) throws Exception {
-        if (args.length != 1)
-            throw new Exception("invalid number of arguments");
+    public void cd(String[] args) {
+        if (args.length == 0)
+        {
+            currentDiretory = homeDirectory;
+            return ;
+        }
+        else if (args.length != 1)
+        {
+            System.out.println("usage: cd [path]");
+            return ;
+        }
         Path relativePath = Paths.get(args[0]);
         Path resolvedPath = currentDiretory.resolve(relativePath).normalize();
         if (!Files.exists(resolvedPath) || !Files.isDirectory(resolvedPath))
-            throw new Exception(args[0] + "path is invalid ");
+        {
+            System.out.println(args[0] + " is not a valid directory path");
+            return ;
+        }
         currentDiretory = resolvedPath;
     }
 
