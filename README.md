@@ -1,18 +1,56 @@
+# My Java Command-Line Interface (CLI)
+
+A simple Java-based command-line interface for manipulating system files.
+
+## Overview
+
+This command-line interface (CLI) is designed to simulate a standard CLI such as bash or Powershell.
+
+## Table of Contents
+
+- [Getting Started](#getting-started)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Usage](#usage)
+
 ## Getting Started
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+To get started with this CLI tool, follow the instructions below.
 
-## Folder Structure
+### Prerequisites
 
-The workspace contains two folders by default, where:
+Before using the CLI, you must have the following prerequisites installed on your system:
 
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
+- Java (version 1.8 or later)
 
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
+### Installation
 
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
+To install and use this CLI, follow these steps:
 
-## Dependency Management
+1. Clone the repository:
+```git clone https://github.com/yourusername/your-project.git```
 
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+2. Run the project using Java:
+```java src/Terminal.java```
+
+## Usage
+
+The CLI supports the following command-line options:
+
+- `echo [args]`
+- `pwd`
+- `cd [dir]`
+- `ls [-r]` 
+- `mkdir dirs`
+- `rmdir dir|*`
+- `touch filename`
+- `cp [-r] path1 path2`
+- `rm file`
+- `cat file`
+- `wc file`
+- `history`
+
+the CLI also supports the following operators:
+- `> filepath`  saves the output of command to filepath
+- `>> filepath` appends the output to filepath
+
